@@ -6,7 +6,7 @@
 <title>GhostChat</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap');
 
   :root {
     --bg: #0a0a0f;
@@ -17,6 +17,7 @@
     --accent-dim: rgba(124,255,212,0.12);
     --accent-glow: rgba(124,255,212,0.25);
     --red: #ff5f6d;
+    --yellow: #f7c948;
     --text: #e8e8f0;
     --muted: #666680;
     --mono: 'Space Mono', monospace;
@@ -33,21 +34,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow: hidden;
   }
 
-  /* Noise overlay */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-    pointer-events: none;
-    z-index: 0;
-    opacity: 0.4;
-  }
-
-  /* Ambient glow */
   body::after {
     content: '';
     position: fixed;
@@ -65,27 +53,26 @@
     position: relative;
     z-index: 1;
     width: 100%;
-    max-width: 480px;
+    max-width: 460px;
     padding: 20px;
   }
 
-  /* ---- SCREENS ---- */
-  .screen { display: none; animation: fadeUp 0.35s ease forwards; }
-  .screen.active { display: block; }
+  .screen { display: none; }
+  .screen.active { display: block; animation: fadeUp 0.3s ease forwards; }
 
   @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(16px); }
-    to { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
 
-  /* ---- LOGO ---- */
+  /* LOGO */
   .logo {
     font-family: var(--mono);
     font-size: 13px;
     color: var(--accent);
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -95,26 +82,23 @@
     border-radius: 50%;
     background: var(--accent);
     box-shadow: 0 0 8px var(--accent);
-    animation: pulse 2s ease-in-out infinite;
+    animation: blink 2s ease-in-out infinite;
   }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
-  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
   .logo-sub {
     font-family: var(--mono);
-    font-size: 11px;
+    font-size: 10px;
     color: var(--muted);
     letter-spacing: 0.1em;
-    margin-bottom: 40px;
+    margin-bottom: 32px;
   }
 
-  /* ---- CARD ---- */
+  /* CARD */
   .card {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 28px;
+    border-radius: 14px;
+    padding: 26px;
     position: relative;
     overflow: hidden;
   }
@@ -125,132 +109,245 @@
     height: 1px;
     background: linear-gradient(90deg, transparent, var(--accent-glow), transparent);
   }
-
   .card-title {
     font-family: var(--mono);
-    font-size: 12px;
+    font-size: 11px;
     color: var(--muted);
     letter-spacing: 0.15em;
     text-transform: uppercase;
-    margin-bottom: 20px;
+    margin-bottom: 18px;
   }
 
-  /* ---- INPUTS ---- */
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 4px;
+    margin-bottom: 22px;
+  }
+  .tab {
+    flex: 1;
+    padding: 9px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    cursor: pointer;
+    letter-spacing: 0.08em;
+    transition: all 0.2s;
+  }
+  .tab.active {
+    background: var(--surface);
+    color: var(--accent);
+    border: 1px solid var(--border);
+  }
+
+  /* INPUTS */
+  .field { margin-bottom: 14px; }
   label {
     display: block;
-    font-size: 11px;
+    font-size: 10px;
     font-family: var(--mono);
     color: var(--muted);
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    margin-bottom: 8px;
+    margin-bottom: 7px;
+  }
+  .label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 7px;
+  }
+  .label-row label { margin-bottom: 0; }
+  .label-tag {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--accent);
+    background: var(--accent-dim);
+    padding: 2px 7px;
+    border-radius: 10px;
+    letter-spacing: 0.08em;
   }
 
-  input[type="text"] {
+  input[type="text"],
+  input[type="password"] {
     width: 100%;
     background: var(--surface2);
     border: 1px solid var(--border);
     border-radius: 8px;
     color: var(--text);
     font-family: var(--mono);
-    font-size: 14px;
-    padding: 12px 14px;
+    font-size: 13px;
+    padding: 11px 13px;
     outline: none;
     transition: border-color 0.2s, box-shadow 0.2s;
-    margin-bottom: 16px;
   }
-  input[type="text"]:focus {
+  input:focus {
     border-color: var(--accent);
     box-shadow: 0 0 0 3px var(--accent-dim);
   }
-  input[type="text"]::placeholder { color: var(--muted); }
+  input::placeholder { color: var(--muted); }
 
-  /* ---- BUTTONS ---- */
+  .input-row {
+    display: flex;
+    gap: 8px;
+  }
+  .input-row input { flex: 1; }
+  .gen-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 0 12px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    letter-spacing: 0.06em;
+  }
+  .gen-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* MODE TOGGLE */
+  .mode-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 11px 13px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 14px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    user-select: none;
+  }
+  .mode-row:hover { border-color: #444455; }
+  .mode-row-left { display: flex; flex-direction: column; gap: 2px; }
+  .mode-label { font-family: var(--mono); font-size: 11px; color: var(--text); letter-spacing: 0.08em; }
+  .mode-desc { font-family: var(--mono); font-size: 10px; color: var(--muted); }
+  .toggle {
+    width: 36px; height: 20px;
+    background: var(--border);
+    border-radius: 10px;
+    position: relative;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .toggle.on { background: var(--accent); }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 14px; height: 14px;
+    background: white;
+    border-radius: 50%;
+    top: 3px; left: 3px;
+    transition: transform 0.2s;
+  }
+  .toggle.on::after { transform: translateX(16px); }
+
+  /* COLLAPSIBLE PASSWORD FIELD */
+  .pwd-field { overflow: hidden; max-height: 0; transition: max-height 0.3s ease, opacity 0.3s ease; opacity: 0; }
+  .pwd-field.show { max-height: 80px; opacity: 1; }
+
+  /* DIVIDER */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 18px 0;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+  }
+  .divider::before, .divider::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  /* BUTTONS */
   .btn {
     width: 100%;
-    padding: 13px;
+    padding: 12px;
     border-radius: 8px;
     border: none;
     font-family: var(--mono);
-    font-size: 13px;
-    letter-spacing: 0.08em;
+    font-size: 12px;
+    letter-spacing: 0.1em;
     cursor: pointer;
     transition: all 0.2s;
     font-weight: 700;
+    text-transform: uppercase;
   }
-  .btn-primary {
-    background: var(--accent);
-    color: #0a0a0f;
-  }
+  .btn-primary { background: var(--accent); color: #0a0a0f; }
   .btn-primary:hover { background: #9fffde; box-shadow: 0 0 20px var(--accent-glow); }
   .btn-primary:active { transform: scale(0.98); }
-
   .btn-ghost {
     background: transparent;
     color: var(--muted);
     border: 1px solid var(--border);
-    margin-top: 10px;
+    margin-top: 8px;
   }
   .btn-ghost:hover { color: var(--text); border-color: #444455; }
 
-  .divider {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin: 20px 0;
-    color: var(--muted);
-    font-family: var(--mono);
-    font-size: 11px;
-    letter-spacing: 0.1em;
-  }
-  .divider::before, .divider::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-  }
-
-  /* ---- STATUS ---- */
+  /* STATUS */
   .status-bar {
     display: flex;
     align-items: center;
     gap: 6px;
     font-family: var(--mono);
-    font-size: 11px;
+    font-size: 10px;
     color: var(--muted);
-    margin-top: 16px;
-    padding: 10px 14px;
+    margin-top: 14px;
+    padding: 9px 13px;
     background: var(--surface2);
     border-radius: 6px;
     border: 1px solid var(--border);
+    letter-spacing: 0.06em;
   }
-  .status-dot {
+  .sdot {
     width: 5px; height: 5px;
     border-radius: 50%;
     background: var(--muted);
     flex-shrink: 0;
   }
-  .status-dot.green { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
-  .status-dot.yellow { background: #f7c948; box-shadow: 0 0 6px #f7c948; }
-  .status-dot.red { background: var(--red); }
+  .sdot.green { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+  .sdot.yellow { background: var(--yellow); }
+  .sdot.red { background: var(--red); }
 
-  /* ---- CHAT SCREEN ---- */
+  /* ERROR */
+  .err {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--red);
+    background: rgba(255,95,109,0.08);
+    border: 1px solid rgba(255,95,109,0.2);
+    border-radius: 6px;
+    padding: 9px 12px;
+    margin-top: 12px;
+    display: none;
+    letter-spacing: 0.06em;
+  }
+
+  /* ===================== CHAT SCREEN ===================== */
   #chat-screen {
-    height: 100vh;
+    position: fixed;
+    inset: 0;
     display: none;
     flex-direction: column;
-    max-width: 680px;
-    margin: 0 auto;
-    padding: 0;
-    width: 100%;
+    background: var(--bg);
+    z-index: 100;
   }
-  #chat-screen.active {
-    display: flex;
-    animation: fadeUp 0.35s ease forwards;
-  }
+  #chat-screen.active { display: flex; animation: fadeUp 0.3s ease forwards; }
 
   .chat-header {
-    padding: 16px 20px;
+    padding: 14px 18px;
     background: var(--surface);
     border-bottom: 1px solid var(--border);
     display: flex;
@@ -266,259 +363,136 @@
     height: 1px;
     background: linear-gradient(90deg, transparent, var(--accent-dim), transparent);
   }
-
-  .chat-header-left { display: flex; flex-direction: column; gap: 3px; }
-  .chat-room-name {
-    font-family: var(--mono);
-    font-size: 13px;
-    color: var(--accent);
-    letter-spacing: 0.1em;
-  }
-  .chat-meta {
-    font-family: var(--mono);
-    font-size: 10px;
-    color: var(--muted);
-    letter-spacing: 0.08em;
-  }
-
-  .chat-header-right { display: flex; align-items: center; gap: 10px; }
-
+  .ch-left { display: flex; flex-direction: column; gap: 3px; }
+  .ch-room { font-family: var(--mono); font-size: 13px; color: var(--accent); letter-spacing: 0.1em; }
+  .ch-meta { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.06em; }
+  .ch-right { display: flex; align-items: center; gap: 8px; }
   .enc-badge {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-family: var(--mono);
-    font-size: 10px;
-    color: var(--accent);
+    display: flex; align-items: center; gap: 5px;
+    font-family: var(--mono); font-size: 10px; color: var(--accent);
     background: var(--accent-dim);
-    padding: 4px 9px;
-    border-radius: 20px;
+    padding: 4px 9px; border-radius: 20px;
     border: 1px solid rgba(124,255,212,0.2);
-    letter-spacing: 0.08em;
+    letter-spacing: 0.06em;
   }
-
   .leave-btn {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--muted);
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-family: var(--mono);
-    font-size: 10px;
-    cursor: pointer;
-    letter-spacing: 0.08em;
-    transition: all 0.2s;
+    background: transparent; border: 1px solid var(--border);
+    color: var(--muted); padding: 6px 12px; border-radius: 6px;
+    font-family: var(--mono); font-size: 10px; cursor: pointer;
+    letter-spacing: 0.06em; transition: all 0.2s;
   }
   .leave-btn:hover { color: var(--red); border-color: var(--red); }
 
-  /* ---- MESSAGES ---- */
   #messages {
     flex: 1;
     overflow-y: auto;
-    padding: 20px;
+    padding: 18px;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 3px;
     scroll-behavior: smooth;
   }
-  #messages::-webkit-scrollbar { width: 4px; }
-  #messages::-webkit-scrollbar-track { background: transparent; }
+  #messages::-webkit-scrollbar { width: 3px; }
   #messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-  .msg {
-    display: flex;
-    flex-direction: column;
-    max-width: 75%;
-    animation: msgIn 0.2s ease forwards;
-  }
-  @keyframes msgIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
+  .msg { display: flex; flex-direction: column; max-width: 74%; animation: msgIn 0.2s ease forwards; }
+  @keyframes msgIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
   .msg.mine { align-self: flex-end; align-items: flex-end; }
   .msg.theirs { align-self: flex-start; align-items: flex-start; }
   .msg.system { align-self: center; align-items: center; max-width: 100%; }
 
-  .msg-meta {
-    font-family: var(--mono);
-    font-size: 10px;
-    color: var(--muted);
-    margin-bottom: 4px;
-    letter-spacing: 0.06em;
-  }
-
-  .msg-bubble {
-    padding: 10px 14px;
-    border-radius: 12px;
-    font-size: 14px;
-    line-height: 1.5;
-    word-break: break-word;
-  }
-  .msg.mine .msg-bubble {
-    background: var(--accent);
-    color: #0a0a0f;
-    border-bottom-right-radius: 3px;
-    font-weight: 500;
-  }
-  .msg.theirs .msg-bubble {
-    background: var(--surface2);
-    color: var(--text);
-    border: 1px solid var(--border);
-    border-bottom-left-radius: 3px;
-  }
+  .msg-meta { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-bottom: 4px; letter-spacing: 0.05em; }
+  .msg-bubble { padding: 10px 13px; border-radius: 12px; font-size: 14px; line-height: 1.5; word-break: break-word; }
+  .msg.mine .msg-bubble { background: var(--accent); color: #0a0a0f; border-bottom-right-radius: 3px; font-weight: 500; }
+  .msg.theirs .msg-bubble { background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-bottom-left-radius: 3px; }
   .msg.system .msg-bubble {
-    background: transparent;
-    color: var(--muted);
-    font-family: var(--mono);
-    font-size: 11px;
-    letter-spacing: 0.08em;
-    padding: 6px 12px;
-    border: 1px solid var(--border);
-    border-radius: 20px;
+    background: transparent; color: var(--muted);
+    font-family: var(--mono); font-size: 10px;
+    letter-spacing: 0.08em; padding: 5px 12px;
+    border: 1px solid var(--border); border-radius: 20px;
   }
 
-  /* ---- INPUT BAR ---- */
   .input-bar {
-    padding: 16px 20px;
+    padding: 14px 18px;
     background: var(--surface);
     border-top: 1px solid var(--border);
-    display: flex;
-    gap: 10px;
-    align-items: center;
+    display: flex; gap: 10px; align-items: center;
     flex-shrink: 0;
   }
-
   #msg-input {
     flex: 1;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    color: var(--text);
-    font-family: var(--sans);
-    font-size: 14px;
-    padding: 11px 14px;
-    outline: none;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text);
+    font-family: var(--sans); font-size: 14px;
+    padding: 11px 13px; outline: none;
     transition: border-color 0.2s, box-shadow 0.2s;
-    resize: none;
-    line-height: 1.4;
   }
-  #msg-input:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-dim);
-  }
+  #msg-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
   #msg-input::placeholder { color: var(--muted); }
-  #msg-input:disabled { opacity: 0.4; cursor: not-allowed; }
+  #msg-input:disabled { opacity: 0.35; cursor: not-allowed; }
 
   .send-btn {
-    width: 42px;
-    height: 42px;
-    background: var(--accent);
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    transition: all 0.2s;
+    width: 42px; height: 42px; background: var(--accent);
+    border: none; border-radius: 8px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; flex-shrink: 0;
   }
   .send-btn:hover { background: #9fffde; box-shadow: 0 0 16px var(--accent-glow); }
   .send-btn:active { transform: scale(0.95); }
-  .send-btn svg { color: #0a0a0f; }
   .send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
-  /* ---- WAITING STATE ---- */
-  .waiting-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(10,10,15,0.85);
-    backdrop-filter: blur(4px);
-    z-index: 50;
-    align-items: center;
-    justify-content: center;
+  /* WAITING OVERLAY */
+  .overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(10,10,15,0.88); backdrop-filter: blur(5px);
+    z-index: 200; align-items: center; justify-content: center;
   }
-  .waiting-overlay.show { display: flex; }
-  .waiting-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 32px;
-    text-align: center;
-    max-width: 340px;
-    width: 90%;
-    position: relative;
+  .overlay.show { display: flex; }
+  .ov-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 30px; text-align: center;
+    max-width: 320px; width: 90%; position: relative;
   }
-  .waiting-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--accent-glow), transparent);
+  .ov-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 1px; background: linear-gradient(90deg, transparent, var(--accent-glow), transparent);
   }
-  .waiting-title {
-    font-family: var(--mono);
-    font-size: 13px;
-    color: var(--accent);
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    margin-bottom: 12px;
-  }
-  .waiting-desc {
-    font-size: 13px;
-    color: var(--muted);
-    line-height: 1.6;
-    margin-bottom: 20px;
-  }
-  .room-code-display {
-    font-family: var(--mono);
-    font-size: 22px;
-    color: var(--text);
-    letter-spacing: 0.25em;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 14px;
-    margin-bottom: 16px;
-    cursor: pointer;
+  .ov-title { font-family: var(--mono); font-size: 12px; color: var(--accent); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 10px; }
+  .ov-desc { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 18px; }
+  .code-display {
+    font-family: var(--mono); font-size: 20px; color: var(--text);
+    letter-spacing: 0.25em; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px; margin-bottom: 8px; cursor: pointer;
     transition: border-color 0.2s;
-    position: relative;
   }
-  .room-code-display:hover { border-color: var(--accent); }
-  .copy-hint {
-    font-family: var(--mono);
-    font-size: 10px;
-    color: var(--muted);
-    letter-spacing: 0.1em;
-    margin-bottom: 20px;
-  }
-  .spinner {
-    width: 32px; height: 32px;
-    border: 2px solid var(--border);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    margin: 0 auto 16px;
-  }
+  .code-display:hover { border-color: var(--accent); }
+  .copy-hint { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.08em; margin-bottom: 18px; }
+  .spinner { width: 28px; height: 28px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  .error-msg {
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--red);
-    background: rgba(255,95,109,0.1);
-    border: 1px solid rgba(255,95,109,0.2);
-    border-radius: 6px;
-    padding: 10px 12px;
-    margin-top: 12px;
-    display: none;
-    letter-spacing: 0.06em;
+  /* PASSWORD GATE OVERLAY */
+  .pwd-gate {
+    display: none; position: fixed; inset: 0;
+    background: rgba(10,10,15,0.92); backdrop-filter: blur(5px);
+    z-index: 300; align-items: center; justify-content: center;
   }
+  .pwd-gate.show { display: flex; }
+  .pwd-gate-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 30px; max-width: 320px; width: 90%;
+    position: relative;
+  }
+  .pwd-gate-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 1px; background: linear-gradient(90deg, transparent, rgba(247,201,72,0.3), transparent);
+  }
+  .pwd-gate-title { font-family: var(--mono); font-size: 12px; color: var(--yellow); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 8px; }
+  .pwd-gate-sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
+  #gate-pwd-input { margin-bottom: 12px; }
+  .gate-err { font-family: var(--mono); font-size: 10px; color: var(--red); margin-top: 8px; display: none; letter-spacing: 0.06em; }
 
-  /* Responsive */
   @media (max-width: 500px) {
-    #chat-screen { max-width: 100%; }
     .msg { max-width: 88%; }
   }
 </style>
@@ -527,63 +501,85 @@
 
 <div id="app">
 
-  <!-- LANDING SCREEN -->
-  <div id="landing-screen" class="screen active">
-    <div class="logo">
-      <span class="logo-dot"></span>
-      GhostChat
-    </div>
-    <div class="logo-sub">// end-to-end encrypted · zero identity · ephemeral</div>
+  <!-- MAIN SCREEN -->
+  <div id="main-screen" class="screen active">
+    <div class="logo"><span class="logo-dot"></span>GhostChat</div>
+    <div class="logo-sub">// e2e encrypted · anonymous · ephemeral</div>
 
     <div class="card">
-      <div class="card-title">// Identify yourself</div>
-      <label for="username-input">Username</label>
-      <input type="text" id="username-input" placeholder="enter a name..." maxlength="24" autocomplete="off" spellcheck="false">
+      <!-- USERNAME -->
+      <div class="field">
+        <label>Username</label>
+        <input type="text" id="username-input" placeholder="who are you..." maxlength="24" autocomplete="off" spellcheck="false">
+      </div>
 
-      <div class="divider">choose action</div>
+      <!-- TABS -->
+      <div class="tabs">
+        <button class="tab active" id="tab-create" onclick="switchTab('create')">Create Room</button>
+        <button class="tab" id="tab-join" onclick="switchTab('join')">Join Room</button>
+      </div>
 
-      <button class="btn btn-primary" onclick="createRoom()">Create Room</button>
-      <button class="btn btn-ghost" onclick="showJoinScreen()">Join Room</button>
+      <!-- CREATE PANEL -->
+      <div id="panel-create">
+        <div class="field">
+          <div class="label-row">
+            <label>Room ID</label>
+            <span class="label-tag">custom or generated</span>
+          </div>
+          <div class="input-row">
+            <input type="text" id="create-room-id" placeholder="e.g. my-room-42" maxlength="20"
+              autocomplete="off" spellcheck="false" style="text-transform:uppercase; letter-spacing:0.1em;">
+            <button class="gen-btn" onclick="genRoomId()">Generate</button>
+          </div>
+        </div>
 
-      <div id="landing-error" class="error-msg"></div>
+        <div class="mode-row" onclick="togglePasswordMode()" id="pwd-toggle-row">
+          <div class="mode-row-left">
+            <div class="mode-label">Password Protection</div>
+            <div class="mode-desc">Require a password to join</div>
+          </div>
+          <div class="toggle" id="pwd-toggle"></div>
+        </div>
+
+        <div class="pwd-field" id="create-pwd-field">
+          <div class="field">
+            <label>Room Password</label>
+            <input type="password" id="create-pwd-input" placeholder="set a password..." maxlength="64" autocomplete="off">
+          </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="createRoom()">Create Room</button>
+        <div class="err" id="create-err"></div>
+      </div>
+
+      <!-- JOIN PANEL -->
+      <div id="panel-join" style="display:none;">
+        <div class="field">
+          <label>Room ID</label>
+          <input type="text" id="join-room-id" placeholder="enter room id..." maxlength="20"
+            autocomplete="off" spellcheck="false" style="text-transform:uppercase; letter-spacing:0.1em;">
+        </div>
+        <button class="btn btn-primary" onclick="joinRoom()">Join Room</button>
+        <div class="err" id="join-err"></div>
+      </div>
     </div>
 
     <div class="status-bar">
-      <span class="status-dot yellow" id="peer-status-dot"></span>
-      <span id="peer-status-text">Connecting to relay...</span>
-    </div>
-  </div>
-
-  <!-- JOIN SCREEN -->
-  <div id="join-screen" class="screen">
-    <div class="logo">
-      <span class="logo-dot"></span>
-      GhostChat
-    </div>
-    <div class="logo-sub">// joining a room</div>
-
-    <div class="card">
-      <div class="card-title">// Enter room code</div>
-      <label for="room-code-input">Room Code</label>
-      <input type="text" id="room-code-input" placeholder="e.g. XKCD42" maxlength="12" autocomplete="off" spellcheck="false" style="text-transform:uppercase; letter-spacing:0.15em;">
-
-      <button class="btn btn-primary" onclick="joinRoom()">Join Room</button>
-      <button class="btn btn-ghost" onclick="showScreen('landing-screen')">← Back</button>
-
-      <div id="join-error" class="error-msg"></div>
+      <span class="sdot yellow" id="sdot"></span>
+      <span id="stext">Ready</span>
     </div>
   </div>
 
 </div>
 
-<!-- CHAT SCREEN (full page) -->
-<div id="chat-screen" class="screen">
+<!-- CHAT SCREEN -->
+<div id="chat-screen">
   <div class="chat-header">
-    <div class="chat-header-left">
-      <div class="chat-room-name" id="chat-room-label"># ------</div>
-      <div class="chat-meta" id="chat-meta-label">connecting...</div>
+    <div class="ch-left">
+      <div class="ch-room" id="ch-room"># ------</div>
+      <div class="ch-meta" id="ch-meta">connecting...</div>
     </div>
-    <div class="chat-header-right">
+    <div class="ch-right">
       <div class="enc-badge">
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
         E2E
@@ -591,13 +587,11 @@
       <button class="leave-btn" onclick="leaveChat()">Leave</button>
     </div>
   </div>
-
   <div id="messages"></div>
-
   <div class="input-bar">
-    <input type="text" id="msg-input" placeholder="Type a message..." autocomplete="off" spellcheck="false" disabled onkeydown="handleKeyDown(event)">
-    <button class="send-btn" id="send-btn" onclick="sendMessage()" disabled>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <input type="text" id="msg-input" placeholder="Type a message..." autocomplete="off" spellcheck="false" disabled onkeydown="handleKey(event)">
+    <button class="send-btn" id="send-btn" onclick="sendMsg()" disabled>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0a0a0f" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
       </svg>
     </button>
@@ -605,14 +599,28 @@
 </div>
 
 <!-- WAITING OVERLAY -->
-<div class="waiting-overlay" id="waiting-overlay">
-  <div class="waiting-card">
+<div class="overlay" id="waiting-overlay">
+  <div class="ov-card">
     <div class="spinner"></div>
-    <div class="waiting-title">Waiting for peer</div>
-    <div class="waiting-desc">Share this room code with the person you want to chat with.</div>
-    <div class="room-code-display" id="display-room-code" onclick="copyRoomCode()">------</div>
+    <div class="ov-title">Waiting for peer</div>
+    <div class="ov-desc">Share this Room ID with the person you want to chat with.</div>
+    <div class="code-display" id="ov-code" onclick="copyCode()">------</div>
     <div class="copy-hint">// tap to copy</div>
-    <button class="btn btn-ghost" style="margin-top:0;" onclick="leaveChat()">Cancel</button>
+    <button class="btn btn-ghost" onclick="leaveChat()">Cancel</button>
+  </div>
+</div>
+
+<!-- PASSWORD GATE OVERLAY (for joiners) -->
+<div class="pwd-gate" id="pwd-gate">
+  <div class="pwd-gate-card">
+    <div class="pwd-gate-title">🔒 Password Required</div>
+    <div class="pwd-gate-sub">This room is password protected. Enter the password to join.</div>
+    <label>Password</label>
+    <input type="password" id="gate-pwd-input" placeholder="enter password..." maxlength="64"
+      autocomplete="off" onkeydown="if(event.key==='Enter') submitGatePassword()">
+    <button class="btn btn-primary" style="margin-top:4px;" onclick="submitGatePassword()">Enter Room</button>
+    <div class="gate-err" id="gate-err">// Wrong password. Try again.</div>
+    <button class="btn btn-ghost" onclick="leaveChat()">Cancel</button>
   </div>
 </div>
 
@@ -620,121 +628,384 @@
 // ============================================================
 // STATE
 // ============================================================
-let peer = null;
-let conn = null;
-let myUsername = '';
-let myRoomCode = '';
+let peer = null, conn = null;
+let myUsername = '', myRoomId = '';
 let isHost = false;
-let sharedKey = null; // AES-GCM key after ECDH
-let myECDH = null;    // Our ECDH key pair
-let peerPublicKey = null;
-let peerReady = false;
+let sharedKey = null;
+let myECDH = null;
+let passwordProtected = false;
+let roomPasswordHash = '';  // SHA-256 hex of password
+let pendingPeerConn = null; // hold conn until password verified
 
 // ============================================================
-// PEER SETUP
+// UI HELPERS
 // ============================================================
-function initPeer(id) {
-  peer = new Peer(id, {
-    config: {
-      iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:global.stun.twilio.com:3478' }
-      ]
-    }
-  });
+let activeTab = 'create';
 
-  peer.on('open', (peerId) => {
-    updateStatus('green', 'Relay connected');
-  });
+function switchTab(t) {
+  activeTab = t;
+  document.getElementById('tab-create').classList.toggle('active', t === 'create');
+  document.getElementById('tab-join').classList.toggle('active', t === 'join');
+  document.getElementById('panel-create').style.display = t === 'create' ? '' : 'none';
+  document.getElementById('panel-join').style.display = t === 'join' ? '' : 'none';
+}
 
-  peer.on('error', (err) => {
-    console.error('Peer error:', err);
-    if (err.type === 'peer-unavailable') {
-      showError('join-error', 'Room not found. Check the code and try again.');
-      showScreen('join-screen');
-    } else {
-      updateStatus('red', 'Connection error');
-    }
-  });
+let pwdEnabled = false;
+function togglePasswordMode() {
+  pwdEnabled = !pwdEnabled;
+  document.getElementById('pwd-toggle').classList.toggle('on', pwdEnabled);
+  document.getElementById('create-pwd-field').classList.toggle('show', pwdEnabled);
+}
 
-  peer.on('connection', (c) => {
-    if (conn) { c.close(); return; } // one connection only
-    setupConnection(c);
+function genRoomId() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let id = '';
+  for (let i = 0; i < 6; i++) id += chars[Math.floor(Math.random() * chars.length)];
+  document.getElementById('create-room-id').value = id;
+}
+
+function showErr(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = '// ' + msg;
+  el.style.display = 'block';
+}
+function hideErr(id) { document.getElementById(id).style.display = 'none'; }
+
+function setStatus(color, text) {
+  document.getElementById('sdot').className = 'sdot ' + color;
+  document.getElementById('stext').textContent = text;
+}
+
+// ============================================================
+// CRYPTO
+// ============================================================
+async function sha256hex(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function generateECDH() {
+  return await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, false, ['deriveBits']);
+}
+
+function ab2b64(buf) { return btoa(String.fromCharCode(...new Uint8Array(buf))); }
+function b642ab(b64) {
+  const bin = atob(b64), buf = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+  return buf.buffer;
+}
+
+async function deriveSharedKey(peerPubKeyB64) {
+  const peerPub = await crypto.subtle.importKey(
+    'raw', b642ab(peerPubKeyB64),
+    { name: 'ECDH', namedCurve: 'P-256' }, false, []
+  );
+  const raw = await crypto.subtle.deriveBits({ name: 'ECDH', public: peerPub }, myECDH.privateKey, 256);
+  return await crypto.subtle.importKey('raw', raw, { name: 'AES-GCM', length: 256 }, false, ['encrypt','decrypt']);
+}
+
+async function encrypt(text) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, sharedKey, new TextEncoder().encode(text));
+  return { iv: ab2b64(iv.buffer), ct: ab2b64(ct) };
+}
+
+async function decrypt(ivB64, ctB64) {
+  const plain = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv: b642ab(ivB64) }, sharedKey, b642ab(ctB64)
+  );
+  return new TextDecoder().decode(plain);
+}
+
+// ============================================================
+// ROOM CREATE
+// ============================================================
+async function createRoom() {
+  const username = document.getElementById('username-input').value.trim();
+  const roomId = document.getElementById('create-room-id').value.trim().toUpperCase();
+  if (!username) { showErr('create-err', 'Enter a username.'); return; }
+  if (!roomId) { showErr('create-err', 'Enter or generate a Room ID.'); return; }
+  hideErr('create-err');
+
+  if (pwdEnabled) {
+    const pwd = document.getElementById('create-pwd-input').value;
+    if (!pwd) { showErr('create-err', 'Enter a password or disable protection.'); return; }
+    roomPasswordHash = await sha256hex(pwd);
+    passwordProtected = true;
+  }
+
+  myUsername = username;
+  myRoomId = roomId;
+  isHost = true;
+  myECDH = await generateECDH();
+
+  initPeer('ghostchat-' + roomId);
+  enterChatScreen();
+  showWaiting();
+}
+
+// ============================================================
+// ROOM JOIN
+// ============================================================
+async function joinRoom() {
+  const username = document.getElementById('username-input').value.trim();
+  const roomId = document.getElementById('join-room-id').value.trim().toUpperCase();
+  if (!username) { showErr('join-err', 'Enter a username.'); return; }
+  if (!roomId) { showErr('join-err', 'Enter a Room ID.'); return; }
+  hideErr('join-err');
+
+  myUsername = username;
+  myRoomId = roomId;
+  isHost = false;
+  myECDH = await generateECDH();
+
+  initPeer(null);
+  peer.on('open', () => {
+    const c = peer.connect('ghostchat-' + roomId, { reliable: true });
+    setupConn(c);
+    enterChatScreen();
+    updateMeta('Connecting...');
   });
 }
 
-function setupConnection(c) {
+// ============================================================
+// PEER
+// ============================================================
+function initPeer(id) {
+  const opts = { config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] } };
+  peer = id ? new Peer(id, opts) : new Peer(opts);
+
+  peer.on('open', () => setStatus('green', 'Relay connected'));
+  peer.on('connection', (c) => {
+    if (conn) { c.close(); return; }
+    setupConn(c);
+  });
+  peer.on('error', (err) => {
+    if (err.type === 'peer-unavailable') {
+      showErr('join-err', 'Room not found. Check the ID.');
+      leaveChat(); showScreen('main-screen');
+    } else if (err.type === 'unavailable-id') {
+      showErr('create-err', 'Room ID already in use. Choose another.');
+      leaveChat(); showScreen('main-screen');
+    } else {
+      setStatus('red', 'Connection error');
+    }
+  });
+}
+
+function setupConn(c) {
   conn = c;
 
   conn.on('open', async () => {
-    // Send our ECDH public key + username
-    const pubKeyExported = await crypto.subtle.exportKey('raw', myECDH.publicKey);
-    const pubKeyB64 = arrayBufferToBase64(pubKeyExported);
+    const pubKeyB64 = ab2b64(await crypto.subtle.exportKey('raw', myECDH.publicKey));
     conn.send(JSON.stringify({ type: 'handshake', pubKey: pubKeyB64, username: myUsername }));
   });
 
   conn.on('data', async (raw) => {
-    let data;
-    try { data = JSON.parse(raw); } catch { return; }
+    let d; try { d = JSON.parse(raw); } catch { return; }
 
-    if (data.type === 'handshake') {
-      // Receive peer's public key and derive shared AES key
-      peerPublicKey = data.pubKey;
-      const peerPubKeyBytes = base64ToArrayBuffer(data.pubKey);
-      const peerPubKey = await crypto.subtle.importKey(
-        'raw', peerPubKeyBytes,
-        { name: 'ECDH', namedCurve: 'P-256' },
-        false, []
-      );
-      const rawShared = await crypto.subtle.deriveBits(
-        { name: 'ECDH', public: peerPubKey },
-        myECDH.privateKey, 256
-      );
-      sharedKey = await crypto.subtle.importKey(
-        'raw', rawShared,
-        { name: 'AES-GCM', length: 256 },
-        false, ['encrypt', 'decrypt']
-      );
+    if (d.type === 'handshake') {
+      // Host receives joiner's pubkey
+      sharedKey = await deriveSharedKey(d.pubKey);
 
-      // Acknowledge
-      conn.send(JSON.stringify({ type: 'handshake-ack', username: myUsername }));
-      peerReady = true;
-      onChatReady(data.username);
-
-    } else if (data.type === 'handshake-ack') {
-      peerReady = true;
-      onChatReady(data.username);
-
-    } else if (data.type === 'msg') {
-      if (!sharedKey) return;
-      try {
-        const iv = base64ToArrayBuffer(data.iv);
-        const ct = base64ToArrayBuffer(data.ct);
-        const plainBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, sharedKey, ct);
-        const text = new TextDecoder().decode(plainBuf);
-        appendMessage(data.from, text, 'theirs');
-      } catch(e) {
-        console.error('Decrypt failed', e);
+      if (passwordProtected) {
+        // Send password challenge — joiner must prove they know pwd
+        conn.send(JSON.stringify({ type: 'pwd-required', username: myUsername }));
+        pendingPeerConn = { username: d.username };
+      } else {
+        // No password — ack immediately
+        const pubKeyB64 = ab2b64(await crypto.subtle.exportKey('raw', myECDH.publicKey));
+        conn.send(JSON.stringify({ type: 'handshake-ack', pubKey: pubKeyB64, username: myUsername, pwdRequired: false }));
+        onChatReady(d.username);
       }
 
-    } else if (data.type === 'leave') {
-      appendSystemMessage(`${data.from} left the chat.`);
+    } else if (d.type === 'handshake-ack') {
+      // Joiner receives host's ack
+      sharedKey = await deriveSharedKey(d.pubKey);
+      if (d.pwdRequired) {
+        // Show password gate
+        showPwdGate();
+      } else {
+        onChatReady(d.username);
+      }
+
+    } else if (d.type === 'pwd-required') {
+      // Joiner: host says password needed
+      showPwdGate();
+
+    } else if (d.type === 'pwd-submit') {
+      // Host: joiner sent hashed password
+      if (d.hash === roomPasswordHash) {
+        conn.send(JSON.stringify({ type: 'pwd-ok', username: myUsername }));
+        onChatReady(pendingPeerConn ? pendingPeerConn.username : 'Peer');
+        pendingPeerConn = null;
+      } else {
+        conn.send(JSON.stringify({ type: 'pwd-fail' }));
+      }
+
+    } else if (d.type === 'pwd-ok') {
+      // Joiner: correct password
+      hidePwdGate();
+      onChatReady(d.username);
+
+    } else if (d.type === 'pwd-fail') {
+      // Joiner: wrong password
+      document.getElementById('gate-err').style.display = 'block';
+      document.getElementById('gate-pwd-input').value = '';
+
+    } else if (d.type === 'msg') {
+      if (!sharedKey) return;
+      try {
+        const text = await decrypt(d.iv, d.ct);
+        appendMsg(d.from, text, 'theirs');
+      } catch(e) { console.error('Decrypt fail', e); }
+
+    } else if (d.type === 'leave') {
+      appendSys(`${d.from} left the chat.`);
       disableInput();
     }
   });
 
-  conn.on('close', () => {
-    appendSystemMessage('Peer disconnected.');
-    disableInput();
-  });
-
-  conn.on('error', (err) => {
-    console.error('Conn error:', err);
-  });
+  conn.on('close', () => { appendSys('Peer disconnected.'); disableInput(); });
+  conn.on('error', (e) => console.error('Conn err', e));
 }
 
 // ============================================================
-// CRYPTO HELPERS
+// PASSWORD GATE (joiner side)
 // ============================================================
-async function generateECDH() {
-  return await crypto.subtle.generateKe
+function showPwdGate() {
+  document.getElementById('pwd-gate').classList.add('show');
+  document.getElementById('gate-err').style.display = 'none';
+  setTimeout(() => document.getElementById('gate-pwd-input').focus(), 100);
+}
+
+function hidePwdGate() {
+  document.getElementById('pwd-gate').classList.remove('show');
+}
+
+async function submitGatePassword() {
+  const pwd = document.getElementById('gate-pwd-input').value;
+  if (!pwd) return;
+  const hash = await sha256hex(pwd);
+  conn.send(JSON.stringify({ type: 'pwd-submit', hash }));
+}
+
+// ============================================================
+// CHAT UI
+// ============================================================
+function enterChatScreen() {
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('chat-screen').classList.add('active');
+  document.getElementById('ch-room').textContent = '# ' + myRoomId;
+  updateMeta('you: ' + myUsername + ' · establishing encryption...');
+}
+
+function showWaiting() {
+  document.getElementById('ov-code').textContent = myRoomId;
+  document.getElementById('waiting-overlay').classList.add('show');
+}
+
+function onChatReady(peerUsername) {
+  document.getElementById('waiting-overlay').classList.remove('show');
+  hidePwdGate();
+  updateMeta(`you: ${myUsername} · peer: ${peerUsername} · 🔒 encrypted`);
+  enableInput();
+  appendSys(`🔒 Encrypted session started with ${peerUsername}.`);
+}
+
+function updateMeta(t) { document.getElementById('ch-meta').textContent = t; }
+
+function enableInput() {
+  document.getElementById('msg-input').disabled = false;
+  document.getElementById('send-btn').disabled = false;
+  document.getElementById('msg-input').focus();
+}
+function disableInput() {
+  document.getElementById('msg-input').disabled = true;
+  document.getElementById('send-btn').disabled = true;
+}
+
+async function sendMsg() {
+  const input = document.getElementById('msg-input');
+  const text = input.value.trim();
+  if (!text || !sharedKey || !conn) return;
+  input.value = '';
+  const { iv, ct } = await encrypt(text);
+  conn.send(JSON.stringify({ type: 'msg', from: myUsername, iv, ct }));
+  appendMsg('You', text, 'mine');
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
+}
+
+function appendMsg(from, text, side) {
+  const wrap = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg ' + side;
+  const meta = document.createElement('div');
+  meta.className = 'msg-meta';
+  meta.textContent = from + ' · ' + now();
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bubble';
+  bubble.textContent = text;
+  div.appendChild(meta); div.appendChild(bubble);
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+function appendSys(text) {
+  const wrap = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg system';
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bubble';
+  bubble.textContent = text;
+  div.appendChild(bubble);
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+function now() {
+  const d = new Date();
+  return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+}
+
+function copyCode() {
+  navigator.clipboard.writeText(myRoomId).then(() => {
+    const el = document.getElementById('ov-code');
+    const orig = el.textContent;
+    el.textContent = 'COPIED ✓';
+    setTimeout(() => el.textContent = orig, 1400);
+  });
+}
+
+function leaveChat() {
+  if (conn) {
+    try { conn.send(JSON.stringify({ type: 'leave', from: myUsername })); } catch {}
+    conn.close();
+  }
+  if (peer) peer.destroy();
+  conn = null; peer = null; sharedKey = null; myECDH = null;
+  passwordProtected = false; roomPasswordHash = ''; pendingPeerConn = null;
+
+  document.getElementById('chat-screen').classList.remove('active');
+  document.getElementById('waiting-overlay').classList.remove('show');
+  hidePwdGate();
+  document.getElementById('messages').innerHTML = '';
+  document.getElementById('app').style.display = '';
+  disableInput();
+  showScreen('main-screen');
+  setStatus('yellow', 'Disconnected');
+}
+
+function showScreen(id) {
+  document.querySelectorAll('#app .screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// Auto-generate on load
+genRoomId();
+</script>
+</body>
+</html>
