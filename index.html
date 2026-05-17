@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GhostChat</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #18181f;
+    --border: #2a2a35;
+    --accent: #7cffd4;
+    --accent-dim: rgba(124,255,212,0.12);
+    --accent-glow: rgba(124,255,212,0.25);
+    --red: #ff5f6d;
+    --yellow: #f7c948;
+    --text: #e8e8f0;
+    --muted: #666680;
+    --mono: 'Space Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    top: -20%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 600px;
+    height: 400px;
+    background: radial-gradient(ellipse, rgba(124,255,212,0.04) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  #app {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 460px;
+    padding: 20px;
+  }
+
+  .screen { display: none; }
+  .screen.active { display: block; animation: fadeUp 0.3s ease forwards; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* LOGO */
+  .logo {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--accent);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .logo-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+    animation: blink 2s ease-in-out infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .logo-sub {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    margin-bottom: 32px;
+  }
+
+  /* CARD */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 26px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent-glow), transparent);
+  }
+  .card-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 4px;
+    margin-bottom: 22px;
+  }
+  .tab {
+    flex: 1;
+    padding: 9px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    cursor: pointer;
+    letter-spacing: 0.08em;
+    transition: all 0.2s;
+  }
+  .tab.active {
+    background: var(--surface);
+    color: var(--accent);
+    border: 1px solid var(--border);
+  }
+
+  /* INPUTS */
+  .field { margin-bottom: 14px; }
+  label {
+    display: block;
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 7px;
+  }
+  .label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 7px;
+  }
+  .label-row label { margin-bottom: 0; }
+  .label-tag {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--accent);
+    background: var(--accent-dim);
+    padding: 2px 7px;
+    border-radius: 10px;
+    letter-spacing: 0.08em;
+  }
+
+  input[type="text"],
+  input[type="password"] {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 11px 13px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+  }
+  input::placeholder { color: var(--muted); }
+
+  .input-row {
+    display: flex;
+    gap: 8px;
+  }
+  .input-row input { flex: 1; }
+  .gen-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 0 12px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    letter-spacing: 0.06em;
+  }
+  .gen-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* MODE TOGGLE */
+  .mode-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 11px 13px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 14px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    user-select: none;
+  }
+  .mode-row:hover { border-color: #444455; }
+  .mode-row-left { display: flex; flex-direction: column; gap: 2px; }
+  .mode-label { font-family: var(--mono); font-size: 11px; color: var(--text); letter-spacing: 0.08em; }
+  .mode-desc { font-family: var(--mono); font-size: 10px; color: var(--muted); }
+  .toggle {
+    width: 36px; height: 20px;
+    background: var(--border);
+    border-radius: 10px;
+    position: relative;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .toggle.on { background: var(--accent); }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 14px; height: 14px;
+    background: white;
+    border-radius: 50%;
+    top: 3px; left: 3px;
+    transition: transform 0.2s;
+  }
+  .toggle.on::after { transform: translateX(16px); }
+
+  /* COLLAPSIBLE PASSWORD FIELD */
+  .pwd-field { overflow: hidden; max-height: 0; transition: max-height 0.3s ease, opacity 0.3s ease; opacity: 0; }
+  .pwd-field.show { max-height: 80px; opacity: 1; }
+
+  /* DIVIDER */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 18px 0;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+  }
+  .divider::before, .divider::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  /* BUTTONS */
+  .btn {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .btn-primary { background: var(--accent); color: #0a0a0f; }
+  .btn-primary:hover { background: #9fffde; box-shadow: 0 0 20px var(--accent-glow); }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-ghost {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    margin-top: 8px;
+  }
+  .btn-ghost:hover { color: var(--text); border-color: #444455; }
+
+  /* STATUS */
+  .status-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 14px;
+    padding: 9px 13px;
+    background: var(--surface2);
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    letter-spacing: 0.06em;
+  }
+  .sdot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--muted);
+    flex-shrink: 0;
+  }
+  .sdot.green { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+  .sdot.yellow { background: var(--yellow); }
+  .sdot.red { background: var(--red); }
+
+  /* ERROR */
+  .err {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--red);
+    background: rgba(255,95,109,0.08);
+    border: 1px solid rgba(255,95,109,0.2);
+    border-radius: 6px;
+    padding: 9px 12px;
+    margin-top: 12px;
+    display: none;
+    letter-spacing: 0.06em;
+  }
+
+  /* ===================== CHAT SCREEN ===================== */
+  #chat-screen {
+    position: fixed;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    background: var(--bg);
+    z-index: 100;
+  }
+  #chat-screen.active { display: flex; animation: fadeUp 0.3s ease forwards; }
+
+  .chat-header {
+    padding: 14px 18px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .chat-header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent-dim), transparent);
+  }
+  .ch-left { display: flex; flex-direction: column; gap: 3px; }
+  .ch-room { font-family: var(--mono); font-size: 13px; color: var(--accent); letter-spacing: 0.1em; }
+  .ch-meta { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.06em; }
+  .ch-right { display: flex; align-items: center; gap: 8px; }
+  .enc-badge {
+    display: flex; align-items: center; gap: 5px;
+    font-family: var(--mono); font-size: 10px; color: var(--accent);
+    background: var(--accent-dim);
+    padding: 4px 9px; border-radius: 20px;
+    border: 1px solid rgba(124,255,212,0.2);
+    letter-spacing: 0.06em;
+  }
+  .leave-btn {
+    background: transparent; border: 1px solid var(--border);
+    color: var(--muted); padding: 6px 12px; border-radius: 6px;
+    font-family: var(--mono); font-size: 10px; cursor: pointer;
+    letter-spacing: 0.06em; transition: all 0.2s;
+  }
+  .leave-btn:hover { color: var(--red); border-color: var(--red); }
+
+  #messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    scroll-behavior: smooth;
+  }
+  #messages::-webkit-scrollbar { width: 3px; }
+  #messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .msg { display: flex; flex-direction: column; max-width: 74%; animation: msgIn 0.2s ease forwards; }
+  @keyframes msgIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+  .msg.mine { align-self: flex-end; align-items: flex-end; }
+  .msg.theirs { align-self: flex-start; align-items: flex-start; }
+  .msg.system { align-self: center; align-items: center; max-width: 100%; }
+
+  .msg-meta { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-bottom: 4px; letter-spacing: 0.05em; }
+  .msg-bubble { padding: 10px 13px; border-radius: 12px; font-size: 14px; line-height: 1.5; word-break: break-word; }
+  .msg.mine .msg-bubble { background: var(--accent); color: #0a0a0f; border-bottom-right-radius: 3px; font-weight: 500; }
+  .msg.theirs .msg-bubble { background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-bottom-left-radius: 3px; }
+  .msg.system .msg-bubble {
+    background: transparent; color: var(--muted);
+    font-family: var(--mono); font-size: 10px;
+    letter-spacing: 0.08em; padding: 5px 12px;
+    border: 1px solid var(--border); border-radius: 20px;
+  }
+
+  .input-bar {
+    padding: 14px 18px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: flex; gap: 10px; align-items: center;
+    flex-shrink: 0;
+  }
+  #msg-input {
+    flex: 1;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text);
+    font-family: var(--sans); font-size: 14px;
+    padding: 11px 13px; outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  #msg-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+  #msg-input::placeholder { color: var(--muted); }
+  #msg-input:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  .send-btn {
+    width: 42px; height: 42px; background: var(--accent);
+    border: none; border-radius: 8px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; flex-shrink: 0;
+  }
+  .send-btn:hover { background: #9fffde; box-shadow: 0 0 16px var(--accent-glow); }
+  .send-btn:active { transform: scale(0.95); }
+  .send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* WAITING OVERLAY */
+  .overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(10,10,15,0.88); backdrop-filter: blur(5px);
+    z-index: 200; align-items: center; justify-content: center;
+  }
+  .overlay.show { display: flex; }
+  .ov-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 30px; text-align: center;
+    max-width: 320px; width: 90%; position: relative;
+  }
+  .ov-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 1px; background: linear-gradient(90deg, transparent, var(--accent-glow), transparent);
+  }
+  .ov-title { font-family: var(--mono); font-size: 12px; color: var(--accent); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 10px; }
+  .ov-desc { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 18px; }
+  .code-display {
+    font-family: var(--mono); font-size: 20px; color: var(--text);
+    letter-spacing: 0.25em; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px; margin-bottom: 8px; cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .code-display:hover { border-color: var(--accent); }
+  .copy-hint { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.08em; margin-bottom: 18px; }
+  .spinner { width: 28px; height: 28px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* PASSWORD GATE OVERLAY */
+  .pwd-gate {
+    display: none; position: fixed; inset: 0;
+    background: rgba(10,10,15,0.92); backdrop-filter: blur(5px);
+    z-index: 300; align-items: center; justify-content: center;
+  }
+  .pwd-gate.show { display: flex; }
+  .pwd-gate-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 30px; max-width: 320px; width: 90%;
+    position: relative;
+  }
+  .pwd-gate-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 1px; background: linear-gradient(90deg, transparent, rgba(247,201,72,0.3), transparent);
+  }
+  .pwd-gate-title { font-family: var(--mono); font-size: 12px; color: var(--yellow); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 8px; }
+  .pwd-gate-sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
+  #gate-pwd-input { margin-bottom: 12px; }
+  .gate-err { font-family: var(--mono); font-size: 10px; color: var(--red); margin-top: 8px; display: none; letter-spacing: 0.06em; }
+
+  @media (max-width: 500px) {
+    .msg { max-width: 88%; }
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- MAIN SCREEN -->
+  <div id="main-screen" class="screen active">
+    <div class="logo"><span class="logo-dot"></span>GhostChat</div>
+    <div class="logo-sub">// e2e encrypted · anonymous · ephemeral</div>
+
+    <div class="card">
+      <!-- USERNAME -->
+      <div class="field">
+        <label>Username</label>
+        <input type="text" id="username-input" placeholder="who are you..." maxlength="24" autocomplete="off" spellcheck="false">
+      </div>
+
+      <!-- TABS -->
+      <div class="tabs">
+        <button class="tab active" id="tab-create" onclick="switchTab('create')">Create Room</button>
+        <button class="tab" id="tab-join" onclick="switchTab('join')">Join Room</button>
+      </div>
+
+      <!-- CREATE PANEL -->
+      <div id="panel-create">
+        <div class="field">
+          <div class="label-row">
+            <label>Room ID</label>
+            <span class="label-tag">custom or generated</span>
+          </div>
+          <div class="input-row">
+            <input type="text" id="create-room-id" placeholder="e.g. my-room-42" maxlength="20"
+              autocomplete="off" spellcheck="false" style="text-transform:uppercase; letter-spacing:0.1em;">
+            <button class="gen-btn" onclick="genRoomId()">Generate</button>
+          </div>
+        </div>
+
+        <div class="mode-row" onclick="togglePasswordMode()" id="pwd-toggle-row">
+          <div class="mode-row-left">
+            <div class="mode-label">Password Protection</div>
+            <div class="mode-desc">Require a password to join</div>
+          </div>
+          <div class="toggle" id="pwd-toggle"></div>
+        </div>
+
+        <div class="pwd-field" id="create-pwd-field">
+          <div class="field">
+            <label>Room Password</label>
+            <input type="password" id="create-pwd-input" placeholder="set a password..." maxlength="64" autocomplete="off">
+          </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="createRoom()">Create Room</button>
+        <div class="err" id="create-err"></div>
+      </div>
+
+      <!-- JOIN PANEL -->
+      <div id="panel-join" style="display:none;">
+        <div class="field">
+          <label>Room ID</label>
+          <input type="text" id="join-room-id" placeholder="enter room id..." maxlength="20"
+            autocomplete="off" spellcheck="false" style="text-transform:uppercase; letter-spacing:0.1em;">
+        </div>
+        <button class="btn btn-primary" onclick="joinRoom()">Join Room</button>
+        <div class="err" id="join-err"></div>
+      </div>
+    </div>
+
+    <div class="status-bar">
+      <span class="sdot yellow" id="sdot"></span>
+      <span id="stext">Ready</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- CHAT SCREEN -->
+<div id="chat-screen">
+  <div class="chat-header">
+    <div class="ch-left">
+      <div class="ch-room" id="ch-room"># ------</div>
+      <div class="ch-meta" id="ch-meta">connecting...</div>
+    </div>
+    <div class="ch-right">
+      <div class="enc-badge">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        E2E
+      </div>
+      <button class="leave-btn" onclick="leaveChat()">Leave</button>
+    </div>
+  </div>
+  <div id="messages"></div>
+  <div class="input-bar">
+    <input type="text" id="msg-input" placeholder="Type a message..." autocomplete="off" spellcheck="false" disabled onkeydown="handleKey(event)">
+    <button class="send-btn" id="send-btn" onclick="sendMsg()" disabled>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0a0a0f" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<!-- WAITING OVERLAY -->
+<div class="overlay" id="waiting-overlay">
+  <div class="ov-card">
+    <div class="spinner"></div>
+    <div class="ov-title">Waiting for peer</div>
+    <div class="ov-desc">Share this Room ID with the person you want to chat with.</div>
+    <div class="code-display" id="ov-code" onclick="copyCode()">------</div>
+    <div class="copy-hint">// tap to copy</div>
+    <button class="btn btn-ghost" onclick="leaveChat()">Cancel</button>
+  </div>
+</div>
+
+<!-- PASSWORD GATE OVERLAY (for joiners) -->
+<div class="pwd-gate" id="pwd-gate">
+  <div class="pwd-gate-card">
+    <div class="pwd-gate-title">🔒 Password Required</div>
+    <div class="pwd-gate-sub">This room is password protected. Enter the password to join.</div>
+    <label>Password</label>
+    <input type="password" id="gate-pwd-input" placeholder="enter password..." maxlength="64"
+      autocomplete="
